@@ -54,10 +54,26 @@ void fn_echo (inode_state& state, const wordvec& words){
    cout << word_range (words.cbegin() + 1, words.cend()) << endl;
 }
 
-
 void fn_exit (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
+
+   // Decode our exit status
+   int status;
+   if (words.size() > 0) {
+      // We only care about the value of the first token after the command itself
+      string exitArg = words.at(1);
+      for (uint i = 0; i < exitArg.size(); i++) {
+         // if (exitArt is non-numeric) {
+         if (exitArg.at(i) < '0' or exitArg.at(i) > '9') {
+            status = 127;
+            break;
+         }
+      }
+      if (status != 127) status = stoi(exitArg);
+   }
+   exit_status::set(status);
+
    throw ysh_exit();
 }
 
