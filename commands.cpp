@@ -46,6 +46,17 @@ void fn_cat (inode_state& state, const wordvec& words){
 void fn_cd (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
+
+   if (words.size() > 1) {
+      // Parse the argument
+      // Start traversing the file system to see if that directory exists
+
+   }
+
+   // else, if no arguments given, return to root
+   else {
+      state.set_directory(state.get_root());
+   }
 }
 
 void fn_echo (inode_state& state, const wordvec& words){
@@ -59,8 +70,8 @@ void fn_exit (inode_state& state, const wordvec& words){
    DEBUGF ('c', words);
 
    // Decode our exit status
-   int status;
-   if (words.size() > 0) {
+   int status = 0;
+   if (words.size() > 1) {
       // We only care about the value of the first token after the command itself
       string exitArg = words.at(1);
       for (uint i = 0; i < exitArg.size(); i++) {
@@ -80,6 +91,18 @@ void fn_exit (inode_state& state, const wordvec& words){
 void fn_ls (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
+
+   // If we're given an argument, see if it's a valid path and show that
+   if (words.size() > 1) {
+      cout << words.at(1) << endl;
+   }
+
+   // Otherwise, show the contents of the current location
+   else {
+      inode currentDir = *state.current_dir();
+      //directory contents = currentDir.get_contents();
+      cout << currentDir.size() << " " << currentDir.get_name() << endl;
+   }
 }
 
 void fn_lsr (inode_state& state, const wordvec& words){
@@ -100,6 +123,15 @@ void fn_mkdir (inode_state& state, const wordvec& words){
 void fn_prompt (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
+
+   if (words.size() > 1) {
+      string new_prompt("");
+      for (uint i = 1; i < words.size(); i++) {
+         new_prompt = new_prompt + words.at(i) + " ";
+      }
+
+      state.set_prompt(new_prompt);
+   }
 }
 
 void fn_pwd (inode_state& state, const wordvec& words){

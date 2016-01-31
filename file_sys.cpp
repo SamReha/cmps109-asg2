@@ -25,12 +25,33 @@ ostream& operator<< (ostream& out, file_type type) {
    return out << hash[type];
 }
 
+/*** INODE STATE ***/
 inode_state::inode_state() {
+   inode root_file(file_type::DIRECTORY_TYPE, ""); // We use an empty string to identify the root directory.
+   root = make_shared<inode>(root_file);
+   cwd = root;
+
    DEBUGF ('i', "root = " << root << ", cwd = " << cwd
           << ", prompt = \"" << prompt() << "\"");
 }
 
 const string& inode_state::prompt() { return prompt_; }
+
+inode_ptr inode_state::current_dir() {
+   return cwd;
+}
+
+inode_ptr inode_state::get_root() {
+   return root;
+}
+
+void inode_state::set_prompt(string new_prompt) {
+   prompt_ = new_prompt;
+}
+
+void inode_state::set_directory(inode_ptr new_directory) {
+   cwd = new_directory;
+}
 
 ostream& operator<< (ostream& out, const inode_state& state) {
    out << "inode_state: root = " << state.root
@@ -38,7 +59,10 @@ ostream& operator<< (ostream& out, const inode_state& state) {
    return out;
 }
 
-inode::inode(file_type type): inode_nr (next_inode_nr++) {
+/*** INODE ***/
+inode::inode(file_type f_type, string inode_name): inode_nr (next_inode_nr++), name(inode_name) {
+   type = f_type;
+
    switch (type) {
       case file_type::PLAIN_TYPE:
            contents = make_shared<plain_file>();
@@ -55,11 +79,28 @@ int inode::get_inode_nr() const {
    return inode_nr;
 }
 
-
+file_type inode::get_file_type() {
+   return type;
+}
+
+base_file_ptr inode::get_contents() {
+   return contents;
+}
+
+int inode::size() {
+   return -1;
+}
+
+string inode::get_name() {
+   return name;
+}
+
+/*** FILE ERROR ***/
 file_error::file_error (const string& what):
             runtime_error (what) {
 }
 
+/*** PLAIN FILE ***/
 size_t plain_file::size() const {
    size_t size {0};
    DEBUGF ('i', "size = " << size);
@@ -87,7 +128,7 @@ inode_ptr plain_file::mkfile (const string&) {
    throw file_error ("is a plain file");
 }
 
-
+/*** DIRECTORY ***/
 size_t directory::size() const {
    size_t size {0};
    DEBUGF ('i', "size = " << size);

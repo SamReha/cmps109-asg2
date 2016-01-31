@@ -24,7 +24,6 @@ using inode_ptr = shared_ptr<inode>;
 using base_file_ptr = shared_ptr<base_file>;
 ostream& operator<< (ostream&, file_type);
 
-
 // inode_state -
 //    A small convenient class to maintain the state of the simulated
 //    process:  the root (/), the current directory (.), and the
@@ -42,33 +41,46 @@ class inode_state {
    public:
       inode_state();
       const string& prompt();
+      inode_ptr current_dir();
+      inode_ptr get_root();
+      void set_prompt(string);
+      void set_directory(inode_ptr);
 };
 
-// class inode -
-// inode ctor -
-//    Create a new inode of the given type.
-// get_inode_nr -
-//    Retrieves the serial number of the inode.  Inode numbers are
-//    allocated in sequence by small integer.
-// size -
-//    Returns the size of an inode.  For a directory, this is the
-//    number of dirents.  For a text file, the number of characters
-//    when printed (the sum of the lengths of each word, plus the
-//    number of words.
-//    
-
+/* class inode -
+   inode ctor -
+      Create a new inode of the given type.
+   get_inode_nr -
+      Retrieves the serial number of the inode.  Inode numbers are
+      allocated in sequence by small integer.
+   get_file_type -
+      Returns the file_type of the inode
+   get_contents -
+      Returns the contents of the inode, whether it is a directory
+      or a file.
+   size -
+      Returns the size of an inode.  For a directory, this is the
+      number of dirents.  For a text file, the number of characters
+      when printed (the sum of the lengths of each word, plus the
+      number of words.
+*/
 class inode {
    friend class inode_state;
    private:
       static int next_inode_nr;
       int inode_nr;
       base_file_ptr contents;
+      file_type type;
+      string name;
    public:
-      inode (file_type);
+      inode (file_type, string);
       int get_inode_nr() const;
+      file_type get_file_type();
+      base_file_ptr get_contents();
+      int size();
+      string get_name();
 };
 
-
 // class base_file -
 // Just a base class at which an inode can point.  No data or
 // functions.  Makes the synthesized members useable only from
@@ -96,7 +108,6 @@ class base_file {
       virtual inode_ptr mkfile (const string& filename) = 0;
 };
 
-
 // class plain_file -
 // Used to hold data.
 // synthesized default ctor -
@@ -128,7 +139,7 @@ class plain_file: public base_file {
 //    does not exist, or the subdirectory is not empty.
 //    Here empty means the only entries are dot (.) and dotdot (..).
 // mkdir -
-//    Creates a new directory under the current directory and 
+//    Creates a new directory under the current directory and
 //    immediately adds the directories dot (.) and dotdot (..) to it.
 //    Note that the parent (..) of / is / itself.  It is an error
 //    if the entry already exists.
