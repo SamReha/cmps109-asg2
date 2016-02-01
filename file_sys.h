@@ -22,13 +22,14 @@ class plain_file;
 class directory;
 using inode_ptr = shared_ptr<inode>;
 using base_file_ptr = shared_ptr<base_file>;
+using directory_ptr = shared_ptr<directory>;
 ostream& operator<< (ostream&, file_type);
 
-// inode_state -
-//    A small convenient class to maintain the state of the simulated
-//    process:  the root (/), the current directory (.), and the
-//    prompt.
-
+/* inode_state -
+      A small convenient class to maintain the state of the simulated
+      process:  the root (/), the current directory (.), and the
+      prompt.
+*/
 class inode_state {
    friend class inode;
    friend ostream& operator<< (ostream& out, const inode_state&);
@@ -66,6 +67,7 @@ class inode_state {
 */
 class inode {
    friend class inode_state;
+   friend ostream& operator<< (ostream& out, inode&);
    private:
       static int next_inode_nr;
       int inode_nr;
@@ -77,21 +79,25 @@ class inode {
       int get_inode_nr() const;
       file_type get_file_type();
       base_file_ptr get_contents();
+      directory_ptr get_directory_contents();
       int size();
       string get_name();
+      void set_root(inode_ptr);
+      void set_parent(inode_ptr);
 };
 
-// class base_file -
-// Just a base class at which an inode can point.  No data or
-// functions.  Makes the synthesized members useable only from
-// the derived classes.
-
+/* class base_file -
+   Just a base class at which an inode can point.  No data or
+   functions.  Makes the synthesized members useable only from
+   the derived classes.
+*/
 class file_error: public runtime_error {
    public:
       explicit file_error (const string& what);
 };
 
 class base_file {
+   friend ostream& operator<< (ostream& out, const base_file&);
    protected:
       base_file() = default;
       base_file (const base_file&) = delete;
@@ -108,15 +114,15 @@ class base_file {
       virtual inode_ptr mkfile (const string& filename) = 0;
 };
 
-// class plain_file -
-// Used to hold data.
-// synthesized default ctor -
-//    Default vector<string> is a an empty vector.
-// readfile -
-//    Returns a copy of the contents of the wordvec in the file.
-// writefile -
-//    Replaces the contents of a file with new contents.
-
+/* class plain_file -
+   Used to hold data.
+   synthesized default ctor -
+      Default vector<string> is a an empty vector.
+   readfile -
+      Returns a copy of the contents of the wordvec in the file.
+   writefile -
+      Replaces the contents of a file with new contents.
+*/
 class plain_file: public base_file {
    private:
       wordvec data;
@@ -129,35 +135,39 @@ class plain_file: public base_file {
       virtual inode_ptr mkfile (const string& filename) override;
 };
 
-// class directory -
-// Used to map filenames onto inode pointers.
-// default ctor -
-//    Creates a new map with keys "." and "..".
-// remove -
-//    Removes the file or subdirectory from the current inode.
-//    Throws an file_error if this is not a directory, the file
-//    does not exist, or the subdirectory is not empty.
-//    Here empty means the only entries are dot (.) and dotdot (..).
-// mkdir -
-//    Creates a new directory under the current directory and
-//    immediately adds the directories dot (.) and dotdot (..) to it.
-//    Note that the parent (..) of / is / itself.  It is an error
-//    if the entry already exists.
-// mkfile -
-//    Create a new empty text file with the given name.  Error if
-//    a dirent with that name exists.
-
+/* class directory -
+   Used to map filenames onto inode pointers.
+   default ctor -
+      Creates a new map with keys "." and "..".
+   remove -
+      Removes the file or subdirectory from the current inode.
+      Throws an file_error if this is not a directory, the file
+      does not exist, or the subdirectory is not empty.
+      Here empty means the only entries are dot (.) and dotdot (..).
+   mkdir -
+      Creates a new directory under the current directory and
+      immediately adds the directories dot (.) and dotdot (..) to it.
+      Note that the parent (..) of / is / itself.  It is an error
+      if the entry already exists.
+   mkfile -
+      Create a new empty text file with the given name.  Error if
+      a dirent with that name exists.
+*/
 class directory: public base_file {
+   friend ostream& operator<< (ostream& out, const directory&);
    private:
       // Must be a map, not unordered_map, so printing is lexicographic
       map<string,inode_ptr> dirents;
    public:
+      directory();
+      directory(inode_ptr, inode_ptr);
       virtual size_t size() const override;
       virtual const wordvec& readfile() const override;
       virtual void writefile (const wordvec& newdata) override;
       virtual void remove (const string& filename) override;
       virtual inode_ptr mkdir (const string& dirname) override;
       virtual inode_ptr mkfile (const string& filename) override;
+      void setdir(string, inode_ptr);
 };
 
 #endif

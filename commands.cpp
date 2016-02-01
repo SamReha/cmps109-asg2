@@ -49,7 +49,7 @@ void fn_cd (inode_state& state, const wordvec& words){
 
    if (words.size() > 1) {
       // Parse the argument
-      // Start traversing the file system to see if that directory exists
+      // Start traversing the directory tree to see if that directory exists
 
    }
 
@@ -100,8 +100,7 @@ void fn_ls (inode_state& state, const wordvec& words){
    // Otherwise, show the contents of the current location
    else {
       inode currentDir = *state.current_dir();
-      //directory contents = currentDir.get_contents();
-      cout << currentDir.size() << " " << currentDir.get_name() << endl;
+      cout << currentDir << endl;
    }
 }
 

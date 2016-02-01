@@ -31,6 +31,10 @@ inode_state::inode_state() {
    root = make_shared<inode>(root_file);
    cwd = root;
 
+   // Configure the parent and root dirs
+   root_file.set_root(root);
+   root_file.set_parent(root);
+
    DEBUGF ('i', "root = " << root << ", cwd = " << cwd
           << ", prompt = \"" << prompt() << "\"");
 }
@@ -87,17 +91,46 @@ base_file_ptr inode::get_contents() {
    return contents;
 }
 
+directory_ptr inode::get_directory_contents() {
+   if (type == file_type::PLAIN_TYPE) throw file_error ("is a plain file");
+   return dynamic_pointer_cast<directory>(contents);
+}
+
 int inode::size() {
-   return -1;
+   return contents->size();
 }
 
 string inode::get_name() {
    return name;
 }
 
-/*** FILE ERROR ***/
+void inode::set_root(inode_ptr new_root) {
+   if (type == file_type::PLAIN_TYPE) throw file_error ("is a plain file");
+   dynamic_pointer_cast<directory>(contents) -> setdir(string("."), new_root);
+}
+
+void inode::set_parent(inode_ptr new_parent) {
+   if (type == file_type::PLAIN_TYPE) throw file_error ("is a plain file");
+   dynamic_pointer_cast<directory>(contents) -> setdir(string(".."), new_parent);
+}
+
+ostream& operator<< (ostream& out, inode& node) {
+   if (node.type == file_type::DIRECTORY_TYPE) {
+      out << "/" << node.name << ":" << endl;
+   }
+
+   out << *dynamic_pointer_cast<directory>(node.contents);
+   return out;
+}
+
+/*** BASE FILE ***/
 file_error::file_error (const string& what):
             runtime_error (what) {
+}
+
+ostream& operator<< (ostream& out, const base_file&) {
+   out << "I am merely a basefile!";
+   return out;
 }
 
 /*** PLAIN FILE ***/
@@ -129,8 +162,68 @@ inode_ptr plain_file::mkfile (const string&) {
 }
 
 /*** DIRECTORY ***/
+// A handy helper-function to determine who many digits wide a positive number is.
+int get_digit_width(int number) {
+   int width = 1;
+   if (number >= 0) {
+      while (number > 10) {
+         number = number / 10;
+         width++;
+      }
+   }
+
+   return width;
+}
+
+ostream& operator<< (ostream& out, const directory& dir) {
+   for (map<string,inode_ptr>::const_iterator it = dir.dirents.begin(); it != dir.dirents.end(); ++it) {
+      // Print column 1 (inode number):
+      int inode_number = it->second->get_inode_nr();
+      int column_one_width = 5 - get_digit_width(inode_number);
+
+      //out << it->second << " - ";
+
+      while (column_one_width > 0) {
+         out << " ";
+         column_one_width--;
+      }
+      out << inode_number;
+
+      out << "  ";
+
+      // Print column 2 (size):
+      int size = it->second->size();
+      int column_two_width = 5 - get_digit_width(size);
+
+      while (column_two_width > 0) {
+         out << " ";
+         column_two_width--;
+      }
+      out << size;
+
+      out << "  ";
+
+      // Print column 3 (name):
+      out << it->first;
+
+      if (it != dir.dirents.end()) out << endl;
+   }
+   return out;
+}
+
+directory::directory() {
+   dirents.insert(pair<string,inode_ptr>(".", nullptr));
+   dirents.insert(pair<string,inode_ptr>("..", nullptr));
+}
+
+directory::directory(inode_ptr root, inode_ptr parent) {
+   dirents.insert(pair<string,inode_ptr>(".", root));
+   dirents.insert(pair<string,inode_ptr>("..", parent));
+
+}
+
 size_t directory::size() const {
-   size_t size {0};
+   size_t size = dirents.size();
    DEBUGF ('i', "size = " << size);
    return size;
 }
@@ -157,3 +250,14 @@ inode_ptr directory::mkfile (const string& filename) {
    return nullptr;
 }
 
+
+// Updates the pointer of a given directory. If no such directory exists,
+// a new directory is created with the given pointer.
+void directory::setdir(string name, inode_ptr directory) {
+   map<string,inode_ptr>::iterator it = dirents.find(name);
+   if (it != dirents.end()) {
+      dirents.erase(name);
+   }
+
+   dirents.insert(pair<string,inode_ptr>(name, directory));
+}
