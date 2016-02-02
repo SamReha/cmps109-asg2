@@ -41,24 +41,31 @@ int exit_status_message() {
 }
 
 /* check_validity -
-      Checks if a given wordvec represents a valid path either from root or
-      from the current directory as specified by the third parameter. Doesn't
-      live in util.cpp because it needs to know what states are.
+      Checks if a given wordvec represents a valid path either from
+      root or from the current directory as specified by the third
+      parameter. Doesn't live in util.cpp because it needs to know what
+      states are.
 */
-inode_ptr check_validity(inode_state& state, wordvec path_to_check, bool check_from_root) {
-   inode_ptr position = (check_from_root) ? state.get_root() : state.current_dir();
+inode_ptr check_validity(inode_state& state,
+                         wordvec path_to_check,
+                         bool check_from_root) {
+   inode_ptr pos;
+   if (check_from_root) {
+      pos = state.get_root();
+   } else pos = state.current_dir();
+
    uint depth = 0;
 
    while (depth < path_to_check.size()) {
       try {
-         position = position->get_child_directory(path_to_check.at(depth));
+         pos = pos->get_child_directory(path_to_check.at(depth));
          depth++;
       } catch (...) {
          throw command_error ("file system: path does not exist");
       }
    }
 
-   return position;
+   return pos;
 }
 
 void recursive_remove(inode_ptr node) {
@@ -67,12 +74,12 @@ void recursive_remove(inode_ptr node) {
 
       // start at 2 so we skip over . and ..
       for (uint i = 2; i < child_names.size(); i++) {
-         inode_ptr child = node -> get_child_directory(child_names.at(i));
-         recursive_remove(child);
+         inode_ptr kid = node->get_child_directory(child_names.at(i));
+         recursive_remove(kid);
       }
    }
 
-   node -> get_parent() -> remove(node -> get_name());
+   node->get_parent()->remove(node->get_name());
 }
 
 void fn_cat (inode_state& state, const wordvec& words){
@@ -86,7 +93,9 @@ void fn_cat (inode_state& state, const wordvec& words){
    for (uint i = 1; i < words.size(); i++) {
       // First, let's try and parse the file path string into a wordvec
       wordvec file_path = split(words.at(i), "/");
-      inode destination = *check_validity(state, file_path, (words.at(1).at(0) == '/'));
+      inode destination = *check_validity(state,
+                                          file_path,
+                                          (words.at(1).at(0) == '/'));
 
       // Check if the file is a file, and then print it oot.
       if (destination.get_file_type() == file_type::PLAIN_TYPE) {
@@ -103,12 +112,14 @@ void fn_cd (inode_state& state, const wordvec& words){
    // First, let's check our arguments. We shouldn't have more than one.
    if (words.size() > 2) throw command_error ("ls: too many operands");
 
-   // If we're given an argument, see if it's a valid path and change to that
-   // directory
+   // If we're given an argument, see if it's a valid path and change to
+   // that directory
    if (words.size() == 2) {
       // First, let's try and parse the file path string into a wordvec
       wordvec file_path = split(words.at(1), "/");
-      inode_ptr destination_dir = check_validity(state, file_path, (words.at(1).at(0) == '/'));
+      inode_ptr destination_dir = check_validity(state,
+                                           file_path,
+                                           (words.at(1).at(0) == '/'));
 
       // Change current dir
       state.set_directory(destination_dir);
@@ -133,7 +144,8 @@ void fn_exit (inode_state& state, const wordvec& words){
    // Decode our exit status
    int status = 0;
    if (words.size() > 1) {
-      // We only care about the value of the first token after the command itself
+      // We only care about the value of the first token after the
+      // command itself
       string exitArg = words.at(1);
       for (uint i = 0; i < exitArg.size(); i++) {
          // if (exitArt is non-numeric) {
@@ -146,7 +158,8 @@ void fn_exit (inode_state& state, const wordvec& words){
    }
    exit_status::set(status);
 
-   recursive_remove(state.get_root());    // Cleans out the entire filesystem
+   // Cleans out the entire filesystem
+   recursive_remove(state.get_root());
 
    throw ysh_exit();
 }
@@ -155,12 +168,15 @@ void fn_ls (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
 
-   // If we're given an argument, see if it's a valid path and show that
+   // If we're given an argument, see if it's a valid path
    if (words.size() >= 2) {
       for (uint i = 1; i < words.size(); i++) {
-         // First, let's try and parse the file path string into a wordvec
+         // First, let's try and parse the file path string
+         // into a wordvec
          wordvec file_path = split(words.at(i), "/");
-         inode destination_dir = *check_validity(state, file_path, (words.at(i).at(0) == '/'));
+         inode destination_dir = *check_validity(state,
+                                           file_path,
+                                           (words.at(i).at(0) == '/'));
 
          // Show the file
          cout << destination_dir << endl;
@@ -194,9 +210,12 @@ void fn_lsr (inode_state& state, const wordvec& words){
    // If we're given an argument, see if it's a valid path and show that
    if (words.size() >= 2) {
       for (uint i = 1; i < words.size(); i++) {
-         // First, let's try and parse the file path string into a wordvec
+         // First, let's try and parse the file path string into a
+         // wordvec
          wordvec file_path = split(words.at(i), "/");
-         inode_ptr destination_dir = check_validity(state, file_path, (words.at(i).at(0) == '/'));
+         inode_ptr destination_dir = check_validity(state,
+                                           file_path,
+                                           (words.at(i).at(0) == '/'));
 
          // Show the file
          recursive_print(destination_dir);
@@ -210,23 +229,27 @@ void fn_lsr (inode_state& state, const wordvec& words){
 }
 
 /* make_helper
-      fn_make and fn_mkdir have a lot of shared logic, but are still called as
-      separate functions. make_helper handles logic that is common to both
-      functions.
+      fn_make and fn_mkdir have a lot of shared logic, but are still
+      called as separate functions. make_helper handles logic that is
+      common to both functions.
 */
-inode_ptr make_helper(inode_state& state, const wordvec& words, bool is_directory) {
+inode_ptr make_helper(inode_state& state,
+                      const wordvec& words,
+                      bool is_directory) {
    // First, let's try and parse the file path string into a wordvec
    wordvec file_path = split(words.at(1), "/");
 
    // Then, we'll check to see if the path is valid
    wordvec path_to_check = file_path;
 
-   // We don't bother to check the last element, because that will be the new
-   // element
+   // We don't bother to check the last element, because that will be
+   // the new element
    bool make_from_root = (words.at(1).at(0) == '/');
    path_to_check.erase(path_to_check.end());
 
-   inode_ptr destination_dir = check_validity(state, path_to_check, make_from_root);
+   inode_ptr destination_dir = check_validity(state,
+                                              path_to_check,
+                                              make_from_root);
 
    // Create the new file
    if (is_directory) {
@@ -239,7 +262,9 @@ void fn_make (inode_state& state, const wordvec& words){
    DEBUGF ('c', words);
 
    // First, let's check our arguments. We should have at least one.
-   if (words.size() == 1) throw command_error ("make: missing operands");
+   if (words.size() == 1) {
+      throw command_error ("make: missing operands");
+   }
 
    inode_ptr new_file = make_helper(state, words, false);
 
@@ -312,30 +337,16 @@ void fn_rm (inode_state& state, const wordvec& words){
    wordvec path_to_check = file_path;
    bool check_from_root = (words.at(1).at(0) == '/');
 
-   // We don't bother to check the last element, because that will be the
-   // element to remove
+   // We don't bother to check the last element, because that will be
+   // the element to remove
    path_to_check.erase(path_to_check.end());
-   inode_ptr destination_dir = check_validity(state, path_to_check, check_from_root);
+   inode_ptr destination_dir = check_validity(state,
+                                              path_to_check,
+                                              check_from_root);
 
    // Remove the file
    destination_dir -> remove(file_path.back());
 }
-
-/*
-void recursive_remove(inode_ptr node) {
-   if (node -> get_file_type() == file_type::DIRECTORY_TYPE) {
-      wordvec child_names = node -> get_child_names();
-
-      // start at 2 so we skip over . and ..
-      for (uint i = 2; i < child_names.size(); i++) {
-         inode_ptr child = node -> get_child_directory(child_names.at(i));
-         recursive_remove(child);
-      }
-   }
-
-   node -> get_parent() -> remove(node -> get_name());
-}
-*/
 
 void fn_rmr (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
@@ -349,7 +360,9 @@ void fn_rmr (inode_state& state, const wordvec& words){
    // Then, we'll check to see if the path is valid
    bool check_from_root = (words.at(1).at(0) == '/');
 
-   inode_ptr destination_dir = check_validity(state, file_path, check_from_root);
+   inode_ptr destination_dir = check_validity(state,
+                                              file_path,
+                                              check_from_root);
 
    // Remove the file
    recursive_remove(destination_dir);

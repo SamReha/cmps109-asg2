@@ -58,13 +58,6 @@ class exit_status {
 
 wordvec split (const string& line, const string& delimiter);
 
-/* check_validity -
-      Checks if a given wordvec represents a valid path either from root or
-      from the current directory as specified by the third parameter.
-
-bool check_validity(inode_state state, wordvec path_to_check, bool check_from_root);
-*/
-
 // complain -
 //    Used for starting error messages.  Sets the exit status to
 //    EXIT_FAILURE, writes the program name to cerr, and then

@@ -27,7 +27,8 @@ ostream& operator<< (ostream& out, file_type type) {
 
 /*** INODE STATE ***/
 inode_state::inode_state() {
-   inode root_file(file_type::DIRECTORY_TYPE, ""); // We use an empty string to identify the root directory.
+   // We use an empty string to identify the root directory.
+   inode root_file(file_type::DIRECTORY_TYPE, "");
    root = make_shared<inode>(root_file);
    cwd = root;
 
@@ -64,7 +65,8 @@ ostream& operator<< (ostream& out, const inode_state& state) {
 }
 
 /*** INODE ***/
-inode::inode(file_type f_type, string inode_name): inode_nr (next_inode_nr++) {
+inode::inode(file_type f_type, string inode_name):
+       inode_nr (next_inode_nr++) {
    type = f_type;
    name = inode_name;
 
@@ -89,11 +91,13 @@ file_type inode::get_file_type() {
 }
 
 inode_ptr inode::get_child_directory(string name) {
-   return dynamic_pointer_cast<directory>(contents) -> get_dirent(name);
+   return dynamic_pointer_cast<directory>(contents) ->
+                                    get_dirent(name);
 }
 
 wordvec inode::get_child_names() {
-   return dynamic_pointer_cast<directory>(contents) -> get_content_labels();
+   return dynamic_pointer_cast<directory>(contents) ->
+                                    get_content_labels();
 }
 
 int inode::size() {
@@ -105,27 +109,42 @@ string inode::get_name() {
 }
 
 void inode::set_root(inode_ptr new_root) {
-   if (type == file_type::PLAIN_TYPE) throw file_error ("is a plain file");
-   dynamic_pointer_cast<directory>(contents) -> setdir(string("."), new_root);
+   if (type == file_type::PLAIN_TYPE) {
+      throw file_error ("is a plain file");
+   }
+
+   dynamic_pointer_cast<directory>(contents) -> setdir(string("."),
+                                                       new_root);
 }
 
 void inode::set_parent(inode_ptr new_parent) {
-   if (type == file_type::PLAIN_TYPE) throw file_error ("is a plain file");
-   dynamic_pointer_cast<directory>(contents) -> setdir(string(".."), new_parent);
+   if (type == file_type::PLAIN_TYPE) {
+      throw file_error ("is a plain file");
+   }
+
+   dynamic_pointer_cast<directory>(contents) -> setdir(string(".."),
+                                                       new_parent);
 }
 
 inode_ptr inode::get_parent() {
-   if (type == file_type::PLAIN_TYPE) throw file_error ("is a plain file");
+   if (type == file_type::PLAIN_TYPE) {
+      throw file_error ("is a plain file");
+   }
+
    return dynamic_pointer_cast<directory>(contents) -> get_dirent("..");
 }
 
 void inode::writefile(const wordvec& file_data) {
-   if (type == file_type::DIRECTORY_TYPE) throw file_error ("cannot write to directory");
+   if (type == file_type::DIRECTORY_TYPE) {
+      throw file_error ("cannot write to directory");
+   }
+
    dynamic_pointer_cast<plain_file>(contents) -> writefile(file_data);
 }
 
 inode_ptr inode::make_dir(string name) {
-   inode_ptr new_dir = dynamic_pointer_cast<directory>(contents) -> mkdir(name);
+   inode_ptr new_dir = dynamic_pointer_cast<directory>(contents) ->
+                                                       mkdir(name);
    new_dir -> set_parent(make_shared<inode>(*this));
    return new_dir;
 }
@@ -194,7 +213,8 @@ inode_ptr plain_file::mkfile (const string&) {
 }
 
 /*** DIRECTORY ***/
-// A handy helper-function to determine who many digits wide a positive number is.
+// A handy helper-function to determine who many digits wide a positive
+// number is.
 int get_digit_width(int number) {
    int width = 1;
    if (number >= 0) {
@@ -208,7 +228,9 @@ int get_digit_width(int number) {
 }
 
 ostream& operator<< (ostream& out, const directory& dir) {
-   for (map<string,inode_ptr>::const_iterator it = dir.dirents.begin(); it != dir.dirents.end(); ++it) {
+   for (map<string,inode_ptr>::const_iterator it = dir.dirents.begin();
+        it != dir.dirents.end();
+        ++it) {
       // Print column 1 (inode number):
       int inode_number = it->second->get_inode_nr();
       int column_one_width = 5 - get_digit_width(inode_number);
@@ -275,14 +297,21 @@ void directory::remove (const string& filename) {
    map<string,inode_ptr>::iterator it = dirents.find(filename);
    if (it != dirents.end()) {
       inode_ptr node_to_kill = dirents.at(filename);
-      if (node_to_kill -> get_file_type() == file_type::DIRECTORY_TYPE) {
-         if (node_to_kill -> size() > 2) throw file_error (filename + "canot be removed because it is not empty");
+      if (node_to_kill->get_file_type() == file_type::DIRECTORY_TYPE) {
+         if (node_to_kill -> size() > 2) {
+            throw file_error (filename +
+                           "canot be removed because it is not empty");
+         }
+
          node_to_kill -> set_root(nullptr);
          node_to_kill -> set_parent(nullptr);
       }
 
       dirents.erase(it);
-   } else throw file_error (filename + " cannot be removed because it does not exist");
+   } else {
+      throw file_error (filename +
+                       " cannot be removed because it does not exist");
+   }
 }
 
 inode_ptr directory::mkdir (const string& dirname) {
@@ -318,8 +347,8 @@ inode_ptr directory::mkfile (const string& filename) {
    return file_ptr;
 }
 
-// Updates the pointer of a given directory. If no such directory exists,
-// a new directory is created with the given pointer.
+// Updates the pointer of a given directory. If no such directory
+// exists, a new directory is created with the given pointer.
 void directory::setdir(string name, inode_ptr directory) {
    map<string,inode_ptr>::iterator it = dirents.find(name);
    if (it != dirents.end()) {
@@ -336,7 +365,9 @@ inode_ptr directory::get_dirent(string name) {
 wordvec directory::get_content_labels() {
    wordvec labels;
 
-   for(map<string,inode_ptr>::iterator it = dirents.begin(); it != dirents.end(); ++it) {
+   for(map<string,inode_ptr>::iterator it = dirents.begin();
+       it != dirents.end();
+       ++it) {
       labels.push_back(it->first);
    }
 
