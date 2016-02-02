@@ -79,6 +79,7 @@ class inode {
       int get_inode_nr() const;
       file_type get_file_type();
       inode_ptr get_child_directory(string name);
+      wordvec get_child_names();
       int size();
       string get_name();
       void set_root(inode_ptr);
@@ -174,6 +175,7 @@ class directory: public base_file {
       virtual inode_ptr mkfile (const string& filename) override;
       void setdir(string, inode_ptr);
       inode_ptr get_dirent(string name);
+      wordvec get_content_labels();
 };
 
 #endif

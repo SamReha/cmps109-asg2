@@ -138,17 +138,16 @@ void fn_ls (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
 
-   // First, let's check our arguments. We shouldn't have more than one.
-   if (words.size() > 2) throw command_error ("ls: too many operands");
-
    // If we're given an argument, see if it's a valid path and show that
-   if (words.size() == 2) {
-      // First, let's try and parse the file path string into a wordvec
-      wordvec file_path = split(words.at(1), "/");
-      inode destination_dir = *check_validity(state, file_path, (words.at(1).at(0) == '/'));
+   if (words.size() >= 2) {
+      for (uint i = 1; i < words.size(); i++) {
+         // First, let's try and parse the file path string into a wordvec
+         wordvec file_path = split(words.at(i), "/");
+         inode destination_dir = *check_validity(state, file_path, (words.at(i).at(0) == '/'));
 
-      // Show the file
-      cout << destination_dir << endl;
+         // Show the file
+         cout << destination_dir << endl;
+      }
    }
    // Otherwise, show the contents of the current location
    else {
@@ -157,9 +156,40 @@ void fn_ls (inode_state& state, const wordvec& words){
    }
 }
 
+void recursive_print(inode_ptr inode) {
+   cout << *inode << endl;
+   wordvec child_names = inode -> get_child_names();
+
+   // Start at two so we skip . and ..
+   for (uint i = 2; i < child_names.size(); i++) {
+      inode_ptr child = inode -> get_child_directory(child_names.at(i));
+
+      if (child -> get_file_type() == file_type::DIRECTORY_TYPE) {
+         recursive_print(child);
+      }
+   }
+}
+
 void fn_lsr (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
+
+   // If we're given an argument, see if it's a valid path and show that
+   if (words.size() >= 2) {
+      for (uint i = 1; i < words.size(); i++) {
+         // First, let's try and parse the file path string into a wordvec
+         wordvec file_path = split(words.at(i), "/");
+         inode_ptr destination_dir = check_validity(state, file_path, (words.at(i).at(0) == '/'));
+
+         // Show the file
+         recursive_print(destination_dir);
+      }
+   }
+   // Otherwise, show the contents of the current location
+   else {
+      inode_ptr currentDir = state.current_dir();
+      recursive_print(currentDir);
+   }
 }
 
 /* make_helper

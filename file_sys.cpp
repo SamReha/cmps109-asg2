@@ -92,6 +92,10 @@ inode_ptr inode::get_child_directory(string name) {
    return dynamic_pointer_cast<directory>(contents) -> get_dirent(name);
 }
 
+wordvec inode::get_child_names() {
+   return dynamic_pointer_cast<directory>(contents) -> get_content_labels();
+}
+
 int inode::size() {
    return contents->size();
 }
@@ -313,4 +317,14 @@ void directory::setdir(string name, inode_ptr directory) {
 
 inode_ptr directory::get_dirent(string name) {
    return dirents.at(name);
+}
+
+wordvec directory::get_content_labels() {
+   wordvec labels;
+
+   for(map<string,inode_ptr>::iterator it = dirents.begin(); it != dirents.end(); ++it) {
+      labels.push_back(it->first);
+   }
+
+   return labels;
 }
