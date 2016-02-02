@@ -235,6 +235,21 @@ void fn_prompt (inode_state& state, const wordvec& words){
 void fn_pwd (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
+
+   inode_ptr location = state.current_dir();
+   wordvec current_path;
+
+   while (location != state.get_root()) {
+      location = location -> get_parent();
+      current_path.push_back(location -> get_name());
+      cout << "something" << endl;
+   }
+
+   cout << "/";
+   for (uint i = 1; i < current_path.size(); i++) {
+      cout << current_path.at(i) << "/";
+   }
+   cout << endl;
 }
 
 void fn_rm (inode_state& state, const wordvec& words){

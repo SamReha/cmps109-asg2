@@ -83,6 +83,7 @@ class inode {
       string get_name();
       void set_root(inode_ptr);
       void set_parent(inode_ptr);
+      inode_ptr get_parent();
       void writefile(const wordvec&);
       inode_ptr make_dir(string);
       inode_ptr make_file(string);

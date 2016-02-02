@@ -109,13 +109,20 @@ void inode::set_parent(inode_ptr new_parent) {
    dynamic_pointer_cast<directory>(contents) -> setdir(string(".."), new_parent);
 }
 
+inode_ptr inode::get_parent() {
+   if (type == file_type::PLAIN_TYPE) throw file_error ("is a plain file");
+   return dynamic_pointer_cast<directory>(contents) -> get_dirent("..");
+}
+
 void inode::writefile(const wordvec& file_data) {
    if (type == file_type::DIRECTORY_TYPE) throw file_error ("cannot write to directory");
    dynamic_pointer_cast<plain_file>(contents) -> writefile(file_data);
 }
 
 inode_ptr inode::make_dir(string name) {
-   return dynamic_pointer_cast<directory>(contents) -> mkdir(name);
+   inode_ptr new_dir = dynamic_pointer_cast<directory>(contents) -> mkdir(name);
+   new_dir -> set_parent(make_shared<inode>(*this));
+   return new_dir;
 }
 
 inode_ptr inode::make_file(string name) {
@@ -197,8 +204,6 @@ ostream& operator<< (ostream& out, const directory& dir) {
       int inode_number = it->second->get_inode_nr();
       int column_one_width = 5 - get_digit_width(inode_number);
 
-      //out << it->second << " - ";
-
       while (column_one_width > 0) {
          out << " ";
          column_one_width--;
@@ -270,7 +275,6 @@ inode_ptr directory::mkdir (const string& dirname) {
 
    inode new_directory(file_type::DIRECTORY_TYPE, dirname);
    new_directory.set_root(dirents.at("."));
-   new_directory.set_parent(dirents.at(".."));
 
    inode_ptr directory_ptr = make_shared<inode>(new_directory);
    dirents.insert(pair<string,inode_ptr>(dirname, directory_ptr));
