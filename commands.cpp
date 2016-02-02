@@ -16,6 +16,7 @@ command_hash cmd_hash {
    {"prompt", fn_prompt},
    {"pwd"   , fn_pwd   },
    {"rm"    , fn_rm    },
+   {"rmr"   , fn_rmr   },
 };
 
 command_fn find_command_fn (const string& cmd) {
@@ -304,7 +305,35 @@ void fn_rm (inode_state& state, const wordvec& words){
    destination_dir -> remove(file_path.back());
 }
 
+void recursive_remove(inode_ptr node) {
+   if (node -> get_file_type() == file_type::DIRECTORY_TYPE) {
+      wordvec child_names = node -> get_child_names();
+
+      // start at 2 so we skip over . and ..
+      for (uint i = 2; i < child_names.size(); i++) {
+         inode_ptr child = node -> get_child_directory(child_names.at(i));
+         recursive_remove(child);
+      }
+   }
+
+   cout << "About to remove " << node -> get_name() << endl;
+   node -> get_parent() -> remove(node -> get_name());
+}
+
 void fn_rmr (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
+
+   if (words.size() < 2) throw command_error("rm: too few operands");
+
+   // First, let's try and parse the file path string into a wordvec
+   wordvec file_path = split(words.at(1), "/");
+
+   // Then, we'll check to see if the path is valid
+   bool check_from_root = (words.at(1).at(0) == '/');
+
+   inode_ptr destination_dir = check_validity(state, file_path, check_from_root);
+
+   // Remove the file
+   recursive_remove(destination_dir);
 }

@@ -312,7 +312,6 @@ inode_ptr directory::mkfile (const string& filename) {
 
    inode new_file(file_type::PLAIN_TYPE, filename);
 
-   cout << "Filename: " << new_file.get_name() << endl;
    inode_ptr file_ptr = make_shared<inode>(new_file);
    dirents.insert(pair<string,inode_ptr>(filename, file_ptr));
 
