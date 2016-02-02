@@ -76,7 +76,6 @@ class inode {
       string name;
    public:
       inode (file_type, string);
-      //inode (file_type, string, inode_ptr, inode_ptr);
       int get_inode_nr() const;
       file_type get_file_type();
       inode_ptr get_child_directory(string name);

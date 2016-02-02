@@ -69,10 +69,18 @@ void fn_cd (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
 
-   if (words.size() > 1) {
-      // Parse the argument
-      // Start traversing the directory tree to see if that directory exists
+   // First, let's check our arguments. We shouldn't have more than one.
+   if (words.size() > 2) throw command_error ("ls: too many operands");
 
+   // If we're given an argument, see if it's a valid path and change to that
+   // directory
+   if (words.size() == 2) {
+      // First, let's try and parse the file path string into a wordvec
+      wordvec file_path = split(words.at(1), "/");
+      inode_ptr destination_dir = check_validity(state, file_path, (words.at(1).at(0) == '/'));
+
+      // Change current dir
+      state.set_directory(destination_dir);
    }
 
    // else, if no arguments given, return to root
@@ -114,11 +122,18 @@ void fn_ls (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
 
-   // If we're given an argument, see if it's a valid path and show that
-   if (words.size() > 1) {
-      cout << words.at(1) << endl;
-   }
+   // First, let's check our arguments. We shouldn't have more than one.
+   if (words.size() > 2) throw command_error ("ls: too many operands");
 
+   // If we're given an argument, see if it's a valid path and show that
+   if (words.size() == 2) {
+      // First, let's try and parse the file path string into a wordvec
+      wordvec file_path = split(words.at(1), "/");
+      inode destination_dir = *check_validity(state, file_path, (words.at(1).at(0) == '/'));
+
+      // Show the file
+      cout << destination_dir << endl;
+   }
    // Otherwise, show the contents of the current location
    else {
       inode currentDir = *state.current_dir();

@@ -226,6 +226,10 @@ ostream& operator<< (ostream& out, const directory& dir) {
 
       // Print column 3 (name):
       out << it->first;
+      if (it->second->get_file_type() == file_type::DIRECTORY_TYPE
+         and !(it->first == "." or it->first == "..")) {
+         out << "/";
+      }
 
       if (it != dir.dirents.end()) out << endl;
    }
