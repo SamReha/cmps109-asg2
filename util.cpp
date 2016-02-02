@@ -38,7 +38,6 @@ bool want_echo() {
    return cin_is_not_a_tty or cout_is_not_a_tty;
 }
 
-
 wordvec split (const string& line, const string& delimiters) {
    wordvec words;
    size_t end = 0;
@@ -54,7 +53,21 @@ wordvec split (const string& line, const string& delimiters) {
    DEBUGF ('u', words);
    return words;
 }
+/*
+bool check_validity(inode_state state, wordvec path_to_check, bool check_from_root) {
+   inode position = (check_from_root) ? *state.get_root() : *state.current_dir();
+   int depth = 0;
 
+   while (depth < path_to_check.size()) {
+      try {
+         position = *position.get(path_to_check.at(depth);
+         depth++;
+      }
+   }
+
+   return true;
+}
+*/
 ostream& complain() {
    exit_status::set (EXIT_FAILURE);
    cerr << execname() << ": ";

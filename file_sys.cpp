@@ -77,7 +77,25 @@ inode::inode(file_type f_type, string inode_name): inode_nr (next_inode_nr++), n
    }
    DEBUGF ('i', "inode " << inode_nr << ", type = " << type);
 }
+/*
+inode::inode(file_type f_type, string inode_name, inode_ptr root_ptr, inode_ptr parent): inode_nr (next_inode_nr++), name(inode_name) {
+   type = f_type;
 
+   switch (type) {
+      case file_type::PLAIN_TYPE:
+           contents = make_shared<plain_file>();
+           break;
+      case file_type::DIRECTORY_TYPE:
+           contents = make_shared<directory>();
+           break;
+   }
+
+   root = root_ptr;
+   cwd = parent;
+
+   DEBUGF ('i', "inode " << inode_nr << ", type = " << type);
+}
+*/
 int inode::get_inode_nr() const {
    DEBUGF ('i', "inode = " << inode_nr);
    return inode_nr;
@@ -87,13 +105,8 @@ file_type inode::get_file_type() {
    return type;
 }
 
-base_file_ptr inode::get_contents() {
-   return contents;
-}
-
-directory_ptr inode::get_directory_contents() {
-   if (type == file_type::PLAIN_TYPE) throw file_error ("is a plain file");
-   return dynamic_pointer_cast<directory>(contents);
+inode_ptr inode::get_child_directory(string name) {
+   return dynamic_pointer_cast<directory>(contents) -> get_dirent(name);
 }
 
 int inode::size() {
@@ -112,6 +125,14 @@ void inode::set_root(inode_ptr new_root) {
 void inode::set_parent(inode_ptr new_parent) {
    if (type == file_type::PLAIN_TYPE) throw file_error ("is a plain file");
    dynamic_pointer_cast<directory>(contents) -> setdir(string(".."), new_parent);
+}
+
+void inode::make_dir(string name) {
+   dynamic_pointer_cast<directory>(contents) -> mkdir(name);
+}
+
+void inode::make_file(string name) {
+   dynamic_pointer_cast<directory>(contents) -> mkfile(name);
 }
 
 ostream& operator<< (ostream& out, inode& node) {
@@ -242,14 +263,37 @@ void directory::remove (const string& filename) {
 
 inode_ptr directory::mkdir (const string& dirname) {
    DEBUGF ('i', dirname);
-   return nullptr;
+
+   map<string,inode_ptr>::iterator it = dirents.find(dirname);
+   if (it != dirents.end()) {
+      throw file_error (dirname + " already exists");
+   }
+
+   inode new_directory(file_type::DIRECTORY_TYPE, dirname);
+   new_directory.set_root(dirents.at("."));
+   new_directory.set_parent(dirents.at(".."));
+
+   inode_ptr directory_ptr = make_shared<inode>(new_directory);
+   dirents.insert(pair<string,inode_ptr>(dirname, directory_ptr));
+
+   return directory_ptr;
 }
 
 inode_ptr directory::mkfile (const string& filename) {
    DEBUGF ('i', filename);
-   return nullptr;
-}
 
+   map<string,inode_ptr>::iterator it = dirents.find(filename);
+   if (it != dirents.end()) {
+      throw file_error (filename + " already exists");
+   }
+
+   inode new_file(file_type::PLAIN_TYPE, filename);
+
+   inode_ptr file_ptr = make_shared<inode>(new_file);
+   dirents.insert(pair<string,inode_ptr>(filename, file_ptr));
+
+   return file_ptr;
+}
 
 // Updates the pointer of a given directory. If no such directory exists,
 // a new directory is created with the given pointer.
@@ -260,4 +304,8 @@ void directory::setdir(string name, inode_ptr directory) {
    }
 
    dirents.insert(pair<string,inode_ptr>(name, directory));
+}
+
+inode_ptr directory::get_dirent(string name) {
+   return dirents.at(name);
 }

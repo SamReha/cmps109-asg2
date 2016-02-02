@@ -51,13 +51,19 @@ class exit_status {
       static int get();
 };
 
-
 // split -
 //    Split a string into a wordvec (as defined above).  Any sequence
 //    of chars in the delimiter string is used as a separator.  To
 //    Split a pathname, use "/".  To split a shell command, use " ".
 
 wordvec split (const string& line, const string& delimiter);
+
+/* check_validity -
+      Checks if a given wordvec represents a valid path either from root or
+      from the current directory as specified by the third parameter.
+
+bool check_validity(inode_state state, wordvec path_to_check, bool check_from_root);
+*/
 
 // complain -
 //    Used for starting error messages.  Sets the exit status to

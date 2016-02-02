@@ -76,14 +76,16 @@ class inode {
       string name;
    public:
       inode (file_type, string);
+      //inode (file_type, string, inode_ptr, inode_ptr);
       int get_inode_nr() const;
       file_type get_file_type();
-      base_file_ptr get_contents();
-      directory_ptr get_directory_contents();
+      inode_ptr get_child_directory(string name);
       int size();
       string get_name();
       void set_root(inode_ptr);
       void set_parent(inode_ptr);
+      void make_dir(string);
+      void make_file(string);
 };
 
 /* class base_file -
@@ -168,6 +170,7 @@ class directory: public base_file {
       virtual inode_ptr mkdir (const string& dirname) override;
       virtual inode_ptr mkfile (const string& filename) override;
       void setdir(string, inode_ptr);
+      inode_ptr get_dirent(string name);
 };
 
 #endif

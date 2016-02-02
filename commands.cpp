@@ -2,6 +2,7 @@
 
 #include "commands.h"
 #include "debug.h"
+#include <regex>
 
 command_hash cmd_hash {
    {"cat"   , fn_cat   },
@@ -36,6 +37,27 @@ int exit_status_message() {
    int exit_status = exit_status::get();
    cout << execname() << ": exit(" << exit_status << ")" << endl;
    return exit_status;
+}
+
+/* check_validity -
+      Checks if a given wordvec represents a valid path either from root or
+      from the current directory as specified by the third parameter. Doesn't
+      live in util.cpp because it needs to know what states are.
+*/
+inode_ptr check_validity(inode_state& state, wordvec path_to_check, bool check_from_root) {
+   inode_ptr position = (check_from_root) ? state.get_root() : state.current_dir();
+   int depth = 0;
+
+   while (depth < path_to_check.size()) {
+      try {
+         position = position->get_child_directory(path_to_check.at(depth));
+         depth++;
+      } catch (...) {
+         throw command_error ("mkdir: path does not exist");
+      }
+   }
+
+   return position;
 }
 
 void fn_cat (inode_state& state, const wordvec& words){
@@ -109,14 +131,57 @@ void fn_lsr (inode_state& state, const wordvec& words){
    DEBUGF ('c', words);
 }
 
+/* make_helper
+      fn_make and fn_mkdir have a lot of shared logic, but are still called as
+      separate functions. make_helper handles logic that is common to both
+      functions.
+*/
+void make_helper(inode_state& state, const wordvec& words, bool is_directory) {
+   // First, let's try and parse the file path string into a wordvec
+   wordvec file_path = split(words.at(1), "/");
+
+   // Then, we'll check to see if the path is valid
+   wordvec path_to_check = file_path;
+
+   // We don't bother to check the last element, because that will be the new
+   // element
+   bool make_from_root = (words.at(1).at(0) == '/');
+   path_to_check.erase(path_to_check.end());
+
+   inode_ptr destination_dir = check_validity(state, path_to_check, make_from_root);
+
+   // Create the new file
+   if (is_directory) {
+      destination_dir->make_dir(file_path.back());
+   } else destination_dir->make_file(file_path.back());
+}
+
 void fn_make (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
+
+   // First, let's check our arguments. We should have exactly one.
+   if (words.size() == 1) {
+      throw command_error ("make: missing operand");
+   } else if (words.size() > 2) {
+      throw command_error ("make: only one operand allowed");
+   }
+
+   make_helper(state, words, false);
 }
 
 void fn_mkdir (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
+
+   // First, let's check our arguments. We should have exactly one.
+   if (words.size() == 1) {
+      throw command_error ("mkdir: missing operand");
+   } else if (words.size() > 2) {
+      throw command_error ("mkdir: only one operand allowed");
+   }
+
+   make_helper(state, words, true);
 }
 
 void fn_prompt (inode_state& state, const wordvec& words){
@@ -147,4 +212,3 @@ void fn_rmr (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
 }
-
