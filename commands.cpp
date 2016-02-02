@@ -61,6 +61,20 @@ inode_ptr check_validity(inode_state& state, wordvec path_to_check, bool check_f
    return position;
 }
 
+void recursive_remove(inode_ptr node) {
+   if (node -> get_file_type() == file_type::DIRECTORY_TYPE) {
+      wordvec child_names = node -> get_child_names();
+
+      // start at 2 so we skip over . and ..
+      for (uint i = 2; i < child_names.size(); i++) {
+         inode_ptr child = node -> get_child_directory(child_names.at(i));
+         recursive_remove(child);
+      }
+   }
+
+   node -> get_parent() -> remove(node -> get_name());
+}
+
 void fn_cat (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
@@ -131,6 +145,8 @@ void fn_exit (inode_state& state, const wordvec& words){
       if (status != 127) status = stoi(exitArg);
    }
    exit_status::set(status);
+
+   recursive_remove(state.get_root());    // Cleans out the entire filesystem
 
    throw ysh_exit();
 }
@@ -305,6 +321,7 @@ void fn_rm (inode_state& state, const wordvec& words){
    destination_dir -> remove(file_path.back());
 }
 
+/*
 void recursive_remove(inode_ptr node) {
    if (node -> get_file_type() == file_type::DIRECTORY_TYPE) {
       wordvec child_names = node -> get_child_names();
@@ -316,9 +333,9 @@ void recursive_remove(inode_ptr node) {
       }
    }
 
-   cout << "About to remove " << node -> get_name() << endl;
    node -> get_parent() -> remove(node -> get_name());
 }
+*/
 
 void fn_rmr (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
