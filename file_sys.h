@@ -83,8 +83,9 @@ class inode {
       string get_name();
       void set_root(inode_ptr);
       void set_parent(inode_ptr);
-      void make_dir(string);
-      void make_file(string);
+      void writefile(const wordvec&);
+      inode_ptr make_dir(string);
+      inode_ptr make_file(string);
 };
 
 /* class base_file -
@@ -125,9 +126,11 @@ class base_file {
       Replaces the contents of a file with new contents.
 */
 class plain_file: public base_file {
+   friend ostream& operator<< (ostream& out, const plain_file&);
    private:
       wordvec data;
    public:
+      plain_file();
       virtual size_t size() const override;
       virtual const wordvec& readfile() const override;
       virtual void writefile (const wordvec& newdata) override;

@@ -77,25 +77,7 @@ inode::inode(file_type f_type, string inode_name): inode_nr (next_inode_nr++), n
    }
    DEBUGF ('i', "inode " << inode_nr << ", type = " << type);
 }
-/*
-inode::inode(file_type f_type, string inode_name, inode_ptr root_ptr, inode_ptr parent): inode_nr (next_inode_nr++), name(inode_name) {
-   type = f_type;
 
-   switch (type) {
-      case file_type::PLAIN_TYPE:
-           contents = make_shared<plain_file>();
-           break;
-      case file_type::DIRECTORY_TYPE:
-           contents = make_shared<directory>();
-           break;
-   }
-
-   root = root_ptr;
-   cwd = parent;
-
-   DEBUGF ('i', "inode " << inode_nr << ", type = " << type);
-}
-*/
 int inode::get_inode_nr() const {
    DEBUGF ('i', "inode = " << inode_nr);
    return inode_nr;
@@ -127,20 +109,25 @@ void inode::set_parent(inode_ptr new_parent) {
    dynamic_pointer_cast<directory>(contents) -> setdir(string(".."), new_parent);
 }
 
-void inode::make_dir(string name) {
-   dynamic_pointer_cast<directory>(contents) -> mkdir(name);
+void inode::writefile(const wordvec& file_data) {
+   if (type == file_type::DIRECTORY_TYPE) throw file_error ("cannot write to directory");
+   dynamic_pointer_cast<plain_file>(contents) -> writefile(file_data);
 }
 
-void inode::make_file(string name) {
-   dynamic_pointer_cast<directory>(contents) -> mkfile(name);
+inode_ptr inode::make_dir(string name) {
+   return dynamic_pointer_cast<directory>(contents) -> mkdir(name);
+}
+
+inode_ptr inode::make_file(string name) {
+   return dynamic_pointer_cast<directory>(contents) -> mkfile(name);
 }
 
 ostream& operator<< (ostream& out, inode& node) {
    if (node.type == file_type::DIRECTORY_TYPE) {
       out << "/" << node.name << ":" << endl;
-   }
+      out << *dynamic_pointer_cast<directory>(node.contents);
+   } else out << *dynamic_pointer_cast<plain_file>(node.contents);
 
-   out << *dynamic_pointer_cast<directory>(node.contents);
    return out;
 }
 
@@ -155,8 +142,15 @@ ostream& operator<< (ostream& out, const base_file&) {
 }
 
 /*** PLAIN FILE ***/
+ostream& operator<< (ostream& out, const plain_file& file) {
+   out << file.data;
+   return out;
+}
+
+plain_file::plain_file() {}
+
 size_t plain_file::size() const {
-   size_t size {0};
+   size_t size {data.size()}; // incomplete, needs to factor in spaces
    DEBUGF ('i', "size = " << size);
    return size;
 }
@@ -168,6 +162,7 @@ const wordvec& plain_file::readfile() const {
 
 void plain_file::writefile (const wordvec& words) {
    DEBUGF ('i', words);
+   data = words;
 }
 
 void plain_file::remove (const string&) {
@@ -288,7 +283,7 @@ inode_ptr directory::mkfile (const string& filename) {
 
    map<string,inode_ptr>::iterator it = dirents.find(filename);
    if (it != dirents.end()) {
-      throw file_error (filename + " already exists");
+      return dirents.at(filename);
    }
 
    inode new_file(file_type::PLAIN_TYPE, filename);
