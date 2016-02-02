@@ -240,15 +240,15 @@ void fn_pwd (inode_state& state, const wordvec& words){
    wordvec current_path;
 
    while (location != state.get_root()) {
+      current_path.insert(current_path.begin(), location -> get_name());
       location = location -> get_parent();
-      current_path.push_back(location -> get_name());
-      cout << "something" << endl;
    }
 
-   cout << "/";
    for (uint i = 1; i < current_path.size(); i++) {
-      cout << current_path.at(i) << "/";
+      cout << "/" << current_path.at(i);
    }
+
+   if (current_path.size() == 1) cout << "/";
    cout << endl;
 }
 

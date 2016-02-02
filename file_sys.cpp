@@ -64,8 +64,9 @@ ostream& operator<< (ostream& out, const inode_state& state) {
 }
 
 /*** INODE ***/
-inode::inode(file_type f_type, string inode_name): inode_nr (next_inode_nr++), name(inode_name) {
+inode::inode(file_type f_type, string inode_name): inode_nr (next_inode_nr++) {
    type = f_type;
+   name = inode_name;
 
    switch (type) {
       case file_type::PLAIN_TYPE:
@@ -292,6 +293,7 @@ inode_ptr directory::mkfile (const string& filename) {
 
    inode new_file(file_type::PLAIN_TYPE, filename);
 
+   cout << "Filename: " << new_file.get_name() << endl;
    inode_ptr file_ptr = make_shared<inode>(new_file);
    dirents.insert(pair<string,inode_ptr>(filename, file_ptr));
 
