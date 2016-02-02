@@ -46,7 +46,7 @@ int exit_status_message() {
 */
 inode_ptr check_validity(inode_state& state, wordvec path_to_check, bool check_from_root) {
    inode_ptr position = (check_from_root) ? state.get_root() : state.current_dir();
-   int depth = 0;
+   uint depth = 0;
 
    while (depth < path_to_check.size()) {
       try {
