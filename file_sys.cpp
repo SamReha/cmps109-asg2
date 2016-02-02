@@ -134,6 +134,10 @@ inode_ptr inode::make_file(string name) {
    return dynamic_pointer_cast<directory>(contents) -> mkfile(name);
 }
 
+void inode::remove(string name) {
+   contents -> remove(name);
+}
+
 ostream& operator<< (ostream& out, inode& node) {
    if (node.type == file_type::DIRECTORY_TYPE) {
       out << "/" << node.name << ":" << endl;
@@ -268,6 +272,17 @@ void directory::writefile (const wordvec&) {
 
 void directory::remove (const string& filename) {
    DEBUGF ('i', filename);
+   map<string,inode_ptr>::iterator it = dirents.find(filename);
+   if (it != dirents.end()) {
+      inode_ptr node_to_kill = dirents.at(filename);
+      if (node_to_kill -> get_file_type() == file_type::DIRECTORY_TYPE) {
+         if (node_to_kill -> size() > 2) throw file_error (filename + "canot be removed because it is not empty");
+         node_to_kill -> set_root(nullptr);
+         node_to_kill -> set_parent(nullptr);
+      }
+
+      dirents.erase(it);
+   } else throw file_error (filename + " cannot be removed because it does not exist");
 }
 
 inode_ptr directory::mkdir (const string& dirname) {

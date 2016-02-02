@@ -88,6 +88,7 @@ class inode {
       void writefile(const wordvec&);
       inode_ptr make_dir(string);
       inode_ptr make_file(string);
+      void remove(string);
 };
 
 /* class base_file -

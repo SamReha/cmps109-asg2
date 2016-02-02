@@ -285,6 +285,23 @@ void fn_pwd (inode_state& state, const wordvec& words){
 void fn_rm (inode_state& state, const wordvec& words){
    DEBUGF ('c', state);
    DEBUGF ('c', words);
+
+   if (words.size() < 2) throw command_error("rm: too few operands");
+
+   // First, let's try and parse the file path string into a wordvec
+   wordvec file_path = split(words.at(1), "/");
+
+   // Then, we'll check to see if the path is valid
+   wordvec path_to_check = file_path;
+   bool check_from_root = (words.at(1).at(0) == '/');
+
+   // We don't bother to check the last element, because that will be the
+   // element to remove
+   path_to_check.erase(path_to_check.end());
+   inode_ptr destination_dir = check_validity(state, path_to_check, check_from_root);
+
+   // Remove the file
+   destination_dir -> remove(file_path.back());
 }
 
 void fn_rmr (inode_state& state, const wordvec& words){
